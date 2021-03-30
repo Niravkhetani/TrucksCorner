@@ -1,0 +1,7 @@
+scrapinghub==2.0.0
+Scrapy==1.5.1
+pytz
+spidermon==1.9.0
+selenium==2.53.6
+fake_headers == 1.0.2
+pandas
