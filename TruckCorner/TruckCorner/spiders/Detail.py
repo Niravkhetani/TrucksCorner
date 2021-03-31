@@ -112,7 +112,7 @@ class DetailSpider(scrapy.Spider):
         item['item_url'] = response.meta['listing_url']
 
         if str(response.meta['thumb_urls']) == 'nan':
-            item['thumbnail_url'] = ''
+            item['thumbnail_url'] = response.xpath("//div[@class='slider--no txtcenter']/img/@src").get()
         else:
             item['thumbnail_url'] = response.meta['thumb_urls']
 
@@ -132,13 +132,10 @@ class DetailSpider(scrapy.Spider):
         item['buying_format'] = response.meta["buying_format"]
         item['country'] = response.xpath("//div[@class='u-bold mbs']/a/text()").get('')
 
-
         item['vendor_name'] = response.xpath("//p[@class='u-bold h3-like man']/text()").get('').strip()
         item['vendor_url'] = ''
 
         item['img_url'] = response.xpath("//div[@class='slider--no txtcenter']/img/@src").getall()
-
-        item['source_item_id'] = ''
 
         data = response.xpath("//table[@class='table--specs']//tr")
         data_dict = {}
@@ -168,13 +165,14 @@ class DetailSpider(scrapy.Spider):
             item['location'] = item['vendor_location'] = ''
         try:
             price = data_dict['Price excl. taxes ']
-            if price:
+            regex = re.compile(r'call for price')
+            if regex.search(price):
+                item['currency'] = ''
+                item['price'] = ''
+            else:
                 price = re.sub(r',', '', price)
                 item['price'] = int(price)
                 item['currency'] = 'USD'
-            else:
-                item['currency'] = ''
-                item['price'] = ''
         except:
             item['currency'] = item['price'] = ''
         auction_end = response.xpath("//div[@class='item-fluid']//time[2]/text()").get('')
@@ -190,24 +188,17 @@ class DetailSpider(scrapy.Spider):
         except:
             item['make'] = ''
         try:
-            item['year'] = data_dict['Year ']
+            year = int(data_dict['Year '])
+            if year >= 1900 and year<=2021:
+                item['year'] = year
+            else:
+                item['year'] = ''
         except:
             item['year'] = ''
-
-        # ven_contact = data_dict['Telephone ']
-        # if ven_contact:
-        #     item['vendor_contact'] = ven_contact
-        item['details'] = ''
-        # item['extra_fields'] = ''
         # foo_store.delete(response.meta['collection_item_key'])
+        # item['source_item_id'] = 'ironlist' + '400514' + response.meta['collection_item_key']
         yield item
 
-    # def get_images(self, response):
-    #     gallery = []
-    #     images = response.xpath('//*[@id="vi_main_img_fs"]/ul/li//img/@src').extract()
-    #     for i in images:
-    #         gallery.append(i)
-    #     return gallery
 
 
 
