@@ -36,7 +36,8 @@ class ListingSpider(scrapy.Spider):
             item['item_custom_info'] = {
                 "desc":''
             }
-            item['thumbnail_url'] = i.xpath("div[@class='img']/div/img/@data-src").get('')
+            item['thumbnail_url'] = i.xpath("//div[@class='img']/div/img/@data-src").get('')
+            item['thumbnail_url'] = i.xpath("//div[@class='img']/div/img/@data-src").get('')
             item['item_url'] = "https://www.truckscorner.com"+i.xpath("a[@class='link']/@href").get('')
             buying_format = i.xpath(".//*[@class='maicons maicons-auction']").get('')
             if buying_format == "":

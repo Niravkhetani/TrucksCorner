@@ -46,7 +46,7 @@ class DetailSpider(scrapy.Spider):
             buying_format = []
 
 
-            table = pd.read_csv("TruckCorner/spiders/truckscorner.csv")
+            table = pd.read_csv("TruckCorner/spiders/NewListing.csv")
             titles = list(table['title'])
             listing_urls = list(table['item_url'])
             thumb_urls = list(table['thumbnail_url'])
@@ -109,12 +109,13 @@ class DetailSpider(scrapy.Spider):
         item = TruckcornerItem()
         item['item_title'] = response.meta['titles']
 
-        item['item_url'] = response.url
+        item['item_url'] = response.meta['listing_url']
 
-        if response.meta['thumb_urls']:
-            item['thumbnail_url'] = response.meta['thumb_urls']
-        else:
+        if str(response.meta['thumb_urls']) == 'nan':
             item['thumbnail_url'] = ''
+        else:
+            item['thumbnail_url'] = response.meta['thumb_urls']
+
 
         data = ast.literal_eval(response.meta['categories'])
         if categories:
@@ -139,15 +140,10 @@ class DetailSpider(scrapy.Spider):
 
         item['source_item_id'] = ''
 
-
-        lista = []
-        for i in response.xpath('//*[@id="viTabs_0_is"]/div/table//text()').extract():
-            if i.strip():
-                lista.append(i.strip())
         data = response.xpath("//table[@class='table--specs']//tr")
         data_dict = {}
-        category1 = data.xpath("td/text()").getall()
-        category2 = data.xpath("td[2]//text()").getall()
+        category1 = data.xpath("td/text()[1]").getall()
+        category2 = data.xpath("td[2]//text()[1]").getall()
         cat1 = []
         cat2 = []
         for i in category1:
@@ -169,12 +165,11 @@ class DetailSpider(scrapy.Spider):
             location = response.xpath("//div[@class='u-bold mbs']/a/text()").get('').strip("")
             item['location'] = item['vendor_location'] = location
         except:
-            location = response.xpath("//div[@class='u-bold mbs']//text()").getall()
             item['location'] = item['vendor_location'] = ''
-        item['state'] = response.xpath("//div[@class='u-bold mbs']/text()").get('').strip(",")
         try:
             price = data_dict['Price excl. taxes ']
             if price:
+                price = re.sub(r',', '', price)
                 item['price'] = int(price)
                 item['currency'] = 'USD'
             else:
@@ -182,6 +177,9 @@ class DetailSpider(scrapy.Spider):
                 item['price'] = ''
         except:
             item['currency'] = item['price'] = ''
+        auction_end = response.xpath("//div[@class='item-fluid']//time[2]/text()").get('')
+        if auction_end:
+            item['auction_ending'] = auction_end
 
         item['price_original'] = item['price']
 
@@ -196,10 +194,11 @@ class DetailSpider(scrapy.Spider):
         except:
             item['year'] = ''
 
-        item['vendor_contact'] = ''
+        # ven_contact = data_dict['Telephone ']
+        # if ven_contact:
+        #     item['vendor_contact'] = ven_contact
         item['details'] = ''
         # item['extra_fields'] = ''
-        item['price_original'] = item['price']
         # foo_store.delete(response.meta['collection_item_key'])
         yield item
 
